@@ -5,7 +5,7 @@
 
 #include "config.h"
 
-#if (DEV_SERVICES & SERVICE_THS)
+#if (DEV_SERVICES & SERVICE_THS) && defined(I2C_SDA) && defined(I2C_SCL)
 #include "clock.h"
 #include "OSAL.h"
 #include "gpio.h"
@@ -258,6 +258,159 @@ void init_sensor(void) {
 		thsensor_cfg.sensor_type = ptabinit->sensor_type;
 	}
 	deinit_i2c(&i2c_dev0);
+}
+#elif (DEV_SERVICES & SERVICE_THS)
+#include "clock.h"
+#include "OSAL.h"
+#include "gpio.h"
+#include "pwrmgr.h"
+#include "rom_sym_def.h"
+#include "uart.h"
+#include "watchdog.h"
+#include "trigger.h"
+#include "sensors.h"
+
+
+measured_data_t measured_data;
+thsensor_cfg_t thsensor_cfg = { .sensor_type = TH_SENSOR_IBSTH1 };
+
+
+int read_sensors (void)
+{
+	hal_watchdog_feed();
+	return 0;
+}
+
+void start_measure (void)
+{
+	// use_tx_buf is FALSE so nothing else touches the powermgr lock
+	hal_pwrmgr_lock (MOD_UART0);
+#if 0
+	char msg[] = "start measure\r\n";
+	hal_uart_send_buff (UART0, (void *) msg, sizeof (msg) - 1);
+#endif
+}
+
+
+static void sensor_rx_msg (uint8_t *m, unsigned len)
+{
+
+	if (len != 10) return;
+
+	measured_data.flg.pin_input = !!m[6];
+
+	if (m[6] == 0x00) {
+		measured_data.temp = ((unsigned) m[1]) << 8;
+		measured_data.temp |= m[0];
+	} else {
+		measured_data.temp = ((unsigned) m[3]) << 8;
+		measured_data.temp |= m[2];
+        }
+
+	measured_data.humi = ((unsigned) m[5]) << 8;
+	measured_data.humi |= m[4];
+
+	measured_data.battery = m[8];
+	measured_data.count++;
+
+	hal_pwrmgr_unlock (MOD_UART0);
+}
+
+
+static void sensor_rx_byte (uint8_t b)
+{
+	static enum {
+		STATE_LOST = 0,
+		STATE_DATA = 1,
+		STATE_CK = 2,
+		STATE_END = 3,
+	} state=STATE_LOST;
+
+	static unsigned len, ptr;
+	static uint8_t buf[0x10];
+
+	switch (state) {
+	case STATE_LOST:
+		if (b == 0x52) {
+			state = STATE_DATA;
+			ptr = 0;
+			len=10;
+		}
+		break;
+
+	case STATE_DATA:
+		buf[ptr++] = b;
+		len--;
+		if (!len) state = STATE_CK;
+		break;
+	case STATE_CK:
+		buf[ptr++] = b;
+		state=STATE_END;
+		break;
+	case STATE_END:
+		if (b == 0x45)
+			sensor_rx_msg(buf,10);
+
+		state = STATE_LOST;
+		len = 0;
+		ptr = 0;
+		break;
+	}
+
+	if (ptr >= sizeof (buf)) {
+		state = STATE_LOST;
+		len = 0;
+		ptr = 0;
+	}
+}
+
+
+
+static void sensor_rx_handler (uart_Evt_t *pev)
+{
+	unsigned i;
+
+
+	switch (pev->type) {
+	case UART_EVT_TYPE_RX_DATA:
+	case UART_EVT_TYPE_RX_DATA_TO:
+		break;
+
+	default:
+		return;
+	}
+
+
+	if (pev->len > 0x20) return;
+	if (!pev->data) return;
+
+	for (i = 0; i < pev->len; ++i)
+		sensor_rx_byte (pev->data[i]);
+
+}
+
+
+__ATTR_SECTION_XIP__
+void power_off_sensor (void)
+{
+}
+
+__ATTR_SECTION_XIP__
+void init_sensor (void)
+{
+	uart_Cfg_t cfg = {
+		.tx_pin = P9,
+		.rx_pin = P10,
+		.rts_pin = GPIO_DUMMY,
+		.cts_pin = GPIO_DUMMY,
+		.baudrate = 9600,
+		.use_fifo = TRUE,
+		.hw_fwctrl = FALSE,
+		.use_tx_buf = FALSE,
+		.parity     = FALSE,
+		.evt_handler = sensor_rx_handler,
+	};
+	hal_uart_init (cfg, UART0); //uart init
 }
 
 #else

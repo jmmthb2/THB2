@@ -231,6 +231,30 @@ const ioinit_cfg_t ioInit[] = {
 		{ GPIO_P32, GPIO_PULL_DOWN },
 		{ GPIO_P33, GPIO_PULL_UP }, // I2C_SDA CNV1972
 		{ GPIO_P34, GPIO_PULL_UP }  // I2C_SCL CNV1972
+#elif (DEVICE == DEVICE_IBSTH1)
+		{ GPIO_P00, GPIO_PULL_UP }, // NC
+		{ GPIO_P01, GPIO_PULL_UP }, // NC
+		{ GPIO_P02, GPIO_PULL_UP }, // NC
+		{ GPIO_P03, GPIO_PULL_DOWN }, //To uC
+		{ GPIO_P07, GPIO_PULL_DOWN }, //To uC
+		{ GPIO_P09, GPIO_PULL_UP }, // TX
+		{ GPIO_P10, GPIO_FLOATING }, // RX
+		{ GPIO_P11, GPIO_PULL_UP }, //NC
+		{ GPIO_P14, GPIO_PULL_UP }, // назначен как ADC_PIN, т.к. вывод P11 подключен к делителю
+		{ GPIO_P15, GPIO_PULL_UP },//NC
+		{ GPIO_P16, GPIO_PULL_DOWN }, //32.768MHz XTAL
+		{ GPIO_P17, GPIO_PULL_DOWN }, //32.768MHz XTAL
+		{ GPIO_P18, GPIO_PULL_UP }, // NC
+		{ GPIO_P20, GPIO_PULL_UP }, // NC
+		{ GPIO_P23, GPIO_PULL_UP }, // NC
+		{ GPIO_P24, GPIO_PULL_UP }, // NC
+		{ GPIO_P25, GPIO_PULL_UP }, // 24C256 WP
+		{ GPIO_P26, GPIO_PULL_UP }, // 24C256 SCL
+//		{ GPIO_P27, GPIO_PULL_DOWN },
+		{ GPIO_P31, GPIO_PULL_UP }, // 24C256 SDA
+		{ GPIO_P32, GPIO_PULL_UP }, // NC
+		{ GPIO_P33, GPIO_PULL_UP }, // NC
+		{ GPIO_P34, GPIO_PULL_UP }  // NC
 #elif (DEVICE == DEVICE_TH05D)
 #ifdef GPIO_LED
 		{ GPIO_P00, GPIO_FLOATING }, // LED
@@ -513,7 +537,11 @@ static void hal_init(void) {
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 int main(void) {
 	g_system_clk = SYS_CLK_XTAL_16M; // SYS_CLK_XTAL_16M, SYS_CLK_DBL_32M, SYS_CLK_DLL_64M
-	g_clk32K_config = CLK_32K_RCOSC; // CLK_32K_XTAL, CLK_32K_RCOSC
+#ifdef USE_32K_XTAL
+	g_clk32K_config = CLK_32K_XTAL;
+#else
+	g_clk32K_config = CLK_32K_RCOSC;
+#endif
 
 #if 0 // defined ( __GNUC__ ) // -> *.ld
 	extern const uint32_t *const jump_table_base[];

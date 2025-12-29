@@ -206,6 +206,7 @@ void check_battery(void) {
 		measured_data.battery_mv = bat_average.summ / bat_average.count;
 	}
 
+#if !defined(SENSOR_MEASURES_BATTERY_PCT)
 	if (measured_data.battery_mv < 3000)
 		if (measured_data.battery_mv > 2000)
 			measured_data.battery = (measured_data.battery_mv - 2000) / 10;
@@ -213,5 +214,7 @@ void check_battery(void) {
 			measured_data.battery = 0;
 	else
 		measured_data.battery = 100;
+#endif
+
 	bat_average.battery_mv = 0;
 }

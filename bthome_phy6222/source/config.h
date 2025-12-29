@@ -63,6 +63,7 @@
 #define DEVICE_TH04 	34
 #define DEVICE_HDP16	42
 #define DEVICE_TN6ATAG3 43
+#define DEVICE_IBSTH1   44
 
 #ifndef DEVICE
 #define DEVICE		DEVICE_TH04
@@ -284,6 +285,39 @@
 #define DEF_HARDWARE_REVISION		"001A"
 #endif
 #define DEF_MANUFACTURE_NAME_STR	"Tuya"
+
+#elif DEVICE == DEVICE_IBSTH1
+/* Model: IBSTH1 */
+#if OTA_TYPE == OTA_TYPE_BOOT
+#define DEV_SERVICES (OTA_TYPE \
+		| SERVICE_THS \
+)
+#else
+#define DEV_SERVICES (OTA_TYPE \
+		| SERVICE_THS \
+		| SERVICE_HISTORY \
+		| SERVICE_TH_TRG \
+		| SERVICE_BINDKEY \
+)
+#endif
+
+#define ADC_PIN_USE_OUT		1	// нет подключения к +Vbat
+#define ADC_PIN				GPIO_P14
+#define ADC_VBAT_CHL		VBAT_ADC_P14
+
+#define USE_32K_XTAL		1
+#define USE_TH_SENSOR		1
+
+#define SENSOR_MEASURES_BATTERY_PCT	1
+
+
+#define GPIO_TX		GPIO_P09 // mark TX
+#define GPIO_RX		GPIO_P10 // mark RX
+
+#define DEF_MODEL_NUMBER_STR		"IBSTH1"
+#define DEF_HARDWARE_REVISION		"0001"
+
+#define DEF_MANUFACTURE_NAME_STR	"Inkbird"
 
 #elif DEVICE == DEVICE_TH05D
 /* Model: TH05 v1.3 */

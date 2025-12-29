@@ -154,7 +154,8 @@ enum {
 	TH_SENSOR_AHT2x,	// 5
 	TH_SENSOR_CHT8215,	// 6
 	TH_SENSOR_CHT832x,	// 7
-	TH_SENSOR_TYPE_MAX // 8
+	TH_SENSOR_IBSTH1,	// 8
+	TH_SENSOR_TYPE_MAX // 9
 }; // TH_SENSOR_TYPES
 
 typedef struct __attribute__((packed)) _measured_flg_t {
