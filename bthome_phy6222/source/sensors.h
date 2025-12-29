@@ -210,6 +210,9 @@ void init_sensor(void);
 void power_off_sensor(void);
 void start_measure(void);
 int read_sensors(void);
+#ifdef USE_SENSOR_TIMER
+void sensor_timer_cb(void);
+#endif
 
 #else // (DEV_SERVICES & SERVICE_THS)
 

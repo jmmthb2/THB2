@@ -269,10 +269,13 @@ void init_sensor(void) {
 #include "watchdog.h"
 #include "trigger.h"
 #include "sensors.h"
+#include "thb2_main.h"
 
 
 measured_data_t measured_data;
 thsensor_cfg_t thsensor_cfg = { .sensor_type = TH_SENSOR_IBSTH1 };
+
+static unsigned want_measure = 0;
 
 
 int read_sensors (void)
@@ -281,10 +284,22 @@ int read_sensors (void)
 	return 0;
 }
 
-void start_measure (void)
+void sensor_timer_cb(void)
 {
 	// use_tx_buf is FALSE so nothing else touches the powermgr lock
-	hal_pwrmgr_lock (MOD_UART0);
+	if (want_measure)
+		hal_pwrmgr_lock (MOD_UART0);
+	want_measure = 0;
+}
+
+void start_measure (void)
+{
+	want_measure++;
+
+	// If the timer logic has gotten stuck, just turn everything on
+	if (want_measure > 5)
+		hal_pwrmgr_lock (MOD_UART0);
+
 #if 0
 	char msg[] = "start measure\r\n";
 	hal_uart_send_buff (UART0, (void *) msg, sizeof (msg) - 1);
@@ -314,6 +329,9 @@ static void sensor_rx_msg (uint8_t *m, unsigned len)
 	measured_data.count++;
 
 	hal_pwrmgr_unlock (MOD_UART0);
+
+	osal_stop_timerEx(simpleBLEPeripheral_TaskID, SENSOR_TIMER_EVT);
+	osal_start_timerEx(simpleBLEPeripheral_TaskID, SENSOR_TIMER_EVT, 9900); //sensor reports every 10.1s
 }
 
 
@@ -411,6 +429,9 @@ void init_sensor (void)
 		.evt_handler = sensor_rx_handler,
 	};
 	hal_uart_init (cfg, UART0); //uart init
+
+	want_measure = 1;
+	sensor_timer_cb();
 }
 
 #else

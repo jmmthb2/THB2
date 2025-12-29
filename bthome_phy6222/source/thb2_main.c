@@ -919,6 +919,12 @@ uint16_t BLEPeripheral_ProcessEvent( uint8_t task_id, uint16_t events )
 	}
 #endif
 
+#ifdef USE_SENSOR_TIMER
+	if (events & SENSOR_TIMER_EVT) {
+		sensor_timer_cb();
+	}
+#endif
+
 #if (DEV_SERVICES & SERVICE_HISTORY)
 	if(events & WRK_NOTIFY_EVT) {
 		LOG("Wrk notify events\n");

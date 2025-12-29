@@ -307,6 +307,7 @@
 
 #define USE_32K_XTAL		1
 #define USE_TH_SENSOR		1
+#define USE_SENSOR_TIMER	1
 
 #define SENSOR_MEASURES_BATTERY_PCT	1
 
